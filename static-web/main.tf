@@ -1,6 +1,6 @@
 provider "aws" {
-  profile = "default"
-  region = "ap-southeast-1"
+  profile = var.profile
+  region = var.region
 }
 
 resource "aws_s3_bucket" "bucket" {
@@ -100,4 +100,13 @@ output "cloudfront" {
     value = {
         domain_name = aws_cloudfront_distribution.distribution.domain_name
     }
+}
+
+// upload file to bucket
+resource "aws_s3_object" "object" {
+  bucket = data.aws_s3_bucket.bucket.id
+  for_each = fileset(path.module, "files/*")
+  key    = replace(each.value, "files", "")
+  source = each.value
+  etag = filemd5("${each.value}")
 }
