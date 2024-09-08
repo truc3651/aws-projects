@@ -1,1 +1,1 @@
-![alt text](./architecture.png)
+![alt text](./architecture.jpeg)
