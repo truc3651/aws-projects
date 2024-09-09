@@ -65,6 +65,7 @@ resource "aws_security_group" "allow_ssh_http" {
   }
 
   egress {
+    // ephemeral ports
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -74,5 +75,5 @@ resource "aws_security_group" "allow_ssh_http" {
 
 resource "aws_key_pair" "deployer" {
   key_name   = "deployer-key"
-  public_key = file("${path.module}/../id_rsa.pub")  # Make sure this path is correct
+  public_key = file("${path.module}/../id_rsa.pub")
 }
