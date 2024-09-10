@@ -1,14 +1,21 @@
-data "aws_ami" "ubuntu" {
+data "aws_ami" "amazon_linux" {
   most_recent = true
+
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+    values = ["al2023-ami-*-x86_64-gp2"]  # This is the pattern for Amazon Linux 2023 AMI
   }
-  owners = ["099720109477"]
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+
+  owners = ["137112412989"]  # Amazon's AWS account ID for Amazon Linux AMIs
 }
 
 resource "aws_instance" "web_server" {
-  ami           = data.aws_ami.ubuntu.id
+  ami           = data.aws_ami.amazon_linux.id
   instance_type = "t2.micro"
   associate_public_ip_address = true
   vpc_security_group_ids = [aws_security_group.allow_ssh_http.id]
@@ -17,28 +24,11 @@ resource "aws_instance" "web_server" {
   user_data_replace_on_change = true
   user_data = <<-EOF
     #!/bin/bash
-    sudo apt update
-    sudo apt install nginx -y
-
-    echo "server {
-        listen 80 default_server;
-        listen [::]:80 default_server;
-        root /var/www/html;
-        index index.html;
-        server_name _;
-        location / {
-            try_files \$uri \$uri/ =404;
-        }
-    }" | sudo tee /etc/nginx/sites-available/default
-    
-    echo "<html><body><div>Hello, world!</div></body></html>" > sudo tee /var/www/html/index.html
-
-    sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
-
-    sudo nginx -t
-
-    sudo systemctl enable nginx
-    sudo systemctl start nginx
+    sudo yum update -y
+    sudo yum install -y httpd.x86_64
+    sudo systemctl start httpd.service
+    sudo systemctl enable httpd.service
+    sudo echo "<h1>Hello, world! $(hostname -f)</h1>" > /var/www/html/index.html
     EOF
 }
 
@@ -61,6 +51,15 @@ resource "aws_security_group" "allow_ssh_http" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  // to install nginx
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
