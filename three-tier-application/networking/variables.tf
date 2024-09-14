@@ -2,14 +2,22 @@ variable "vpc_cidr" {
     type = string
 }
 
-variable "public_subnet_cidr" {
+variable "azs" {
+  type = list(string)
+}
+
+variable "public_subnet_cidrs" {
     type = list(string)
 }
 
-variable "private_subnet_cidr" {
+variable "private_subnet_cidrs" {
     type = list(string)
 }
 
-variable "database_subnet_cidr" {
+variable "database_subnet_cidrs" {
     type = list(string)
+}
+
+variable "my_ip" {
+  type = string
 }
