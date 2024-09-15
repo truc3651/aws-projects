@@ -1,12 +1,4 @@
-variable load_balancer_sg {
-    type = any
-}
-
-variable web_server_sg {
-    type = any
-}
-
-variable backend_sg {
+variable sg {
     type = any
 }
 
@@ -24,3 +16,12 @@ variable subnets {
 variable key_pair_name{
     type = string
 }
+
+variable hosted_zone_name {
+    type = string
+}
+
+variable web_server_dns_name {
+    type = string
+}
+    

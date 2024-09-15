@@ -16,11 +16,11 @@ module "networking" {
 module "autoscaling" {
   source = "./autoscaling"
   vpc = module.networking.vpc
-  load_balancer_sg = module.networking.sg.alb_sg
-  web_server_sg = module.networking.sg.web_sg
-  backend_sg = module.networking.sg.backend_sg
+  sg = module.networking.sg
   subnets = module.networking.subnets
   key_pair_name = "deployer-key"
+  hosted_zone_name = "trucstaticsite.io.vn"
+  web_server_dns_name = "app.trucstaticsite.io.vn"
 }
 
 module "database" {

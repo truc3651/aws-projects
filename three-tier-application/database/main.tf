@@ -19,4 +19,5 @@ resource "aws_db_instance" "default" {
   parameter_group_name = "default.mysql8.0"
   db_subnet_group_name = aws_db_subnet_group.db_subnet_group.name
   skip_final_snapshot = true
+  vpc_security_group_ids = [var.database_sg.id]
 }

@@ -1,5 +1,7 @@
 
-output "backend_alb_dns_name" {
-  value = aws_lb.backend_alb.dns_name
-  description = "The DNS name of the backend Application Load Balancer"
+output "alb_dns_name" {
+  value = {
+    backend = aws_lb.backend_alb.dns_name
+    web = aws_lb.web_server_alb.dns_name
+  }
 }

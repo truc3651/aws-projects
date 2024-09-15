@@ -1,5 +1,5 @@
 ## Architecture overview
-![alt text](./images/architecture.jpeg)
+![alt text](./images/architecture.webp)
 
 ## Module structure
 ![alt text](./images/tree.png)
@@ -38,13 +38,18 @@
  - 5 mins later, check CloudWatch alarm, and action it takes
  - Watch Auto Scaling activity / monitor screen
 
-## Assignment (inspired from https://docs.aws.amazon.com/autoscaling/ec2/userguide/tutorial-ec2-auto-scaling-load-balancer.html)
- - Create a DNS record CNAME for ALB
- - Create a ACM for that record to achieve in-transit encryption
- - Force https for ALB (redirect http to https)
+## Assignment
+ - Inspired from https://docs.aws.amazon.com/autoscaling/ec2/userguide/tutorial-ec2-auto-scaling-load-balancer.html
+ - Build a three tier application
  - EC2 re-use keypair ~/.ssh/aws_projects
- - Create IAM role for Auto Scaling perform actions on your behalf
-
+ - Assign domain name to ALB with existing hosted zone
+ - Create an ACM for that record to achieve in-transit encryption
+ - Force https for ALB (redirect http to https)
+ - Ssh to web-server instance, then use ssh agent forwarding to access backend-server (never place private key in web-server)
+   - ssh-add ~/.ssh/aws_projects
+   - ssh-add -l
+   - ssh -A -i ~/.ssh/aws_projects ec2-user@any-ec2-public-ip -y (if dont specify key file name explicitly, ssh agent will use id_rsa by default)
+   - ssh -A -i ~/.ssh/aws_projects ec2-user@any-backend-public-ip -y
 
 
 

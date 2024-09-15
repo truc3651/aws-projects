@@ -49,7 +49,7 @@ resource "aws_subnet" "database_subnets" {
     }
 }
 
-// alb sg
+// web server alb sg
 resource "aws_security_group" "alb_sg" {
   name        = "alb_sg"
   vpc_id      = aws_vpc.main.id
@@ -98,6 +98,26 @@ resource "aws_vpc_security_group_egress_rule" "web_sg_access_everywhere" {
   cidr_ipv4 = "0.0.0.0/0"
 }
 
+// backend alb sg
+resource "aws_security_group" "backend_alb_sg" {
+  name        = "backend_alb_sg"
+  vpc_id      = aws_vpc.main.id
+}
+
+resource "aws_vpc_security_group_ingress_rule" "backend_alb_sg_allows_web_server" {
+  security_group_id = aws_security_group.backend_alb_sg.id
+  from_port   = 8080
+  to_port     = 8080
+  ip_protocol     = "tcp"
+  referenced_security_group_id = aws_security_group.web_sg.id
+}
+
+resource "aws_vpc_security_group_egress_rule" "backend_alb_sg_allows_everywhere" {
+  security_group_id = aws_security_group.backend_alb_sg.id
+  ip_protocol     = "-1"
+   cidr_ipv4 = "0.0.0.0/0"
+}
+
 // backend_sg
 resource "aws_security_group" "backend_sg" {
   name        = "backend_sg"
@@ -121,20 +141,12 @@ resource "aws_vpc_security_group_ingress_rule" "backend_sg_allows_ssh" {
   referenced_security_group_id = aws_security_group.web_sg.id
 }
 
-resource "aws_vpc_security_group_ingress_rule" "backend_sg_allows_web" {
+resource "aws_vpc_security_group_ingress_rule" "backend_sg_allows_alb" {
   security_group_id = aws_security_group.backend_sg.id
   from_port   = 8080
   to_port     = 8080
   ip_protocol     = "tcp"
-  referenced_security_group_id = aws_security_group.web_sg.id
-}
-
-resource "aws_vpc_security_group_egress_rule" "web_sg_allows_backend" {
-  security_group_id = aws_security_group.web_sg.id
-  from_port   = 8080
-  to_port     = 8080
-  ip_protocol     = "tcp"
-  referenced_security_group_id = aws_security_group.backend_sg.id
+  referenced_security_group_id = aws_security_group.backend_alb_sg.id
 }
 
 resource "aws_vpc_security_group_egress_rule" "backend_sg_allows_everywhere" {
@@ -152,8 +164,8 @@ resource "aws_security_group" "database_sg" {
 
 resource "aws_vpc_security_group_ingress_rule" "database_sg_allows_backend" {
   security_group_id = aws_security_group.database_sg.id
-  from_port   = 5432
-  to_port     = 5432
+  from_port   = 3306
+  to_port     = 3306
   ip_protocol     = "tcp"
   referenced_security_group_id = aws_security_group.backend_sg.id
 }
@@ -204,7 +216,7 @@ resource "aws_route_table" "private_rt" {
 }
 
 resource "aws_route_table_association" "private_rt_association" {
-  for_each   = { for k, v in aws_subnet.private_subnets : k => v }
+  for_each   = { for k, v in concat(aws_subnet.private_subnets, aws_subnet.database_subnets) : k => v }
   subnet_id      = each.value.id
   route_table_id = aws_route_table.private_rt.id
 }
