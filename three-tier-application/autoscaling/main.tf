@@ -130,17 +130,17 @@ data "aws_route53_zone" "hosted_zone" {
   name         = var.hosted_zone_name
 }
 
-# resource "aws_route53_record" "alias_record" {
-#   zone_id = data.aws_route53_zone.hosted_zone.zone_id
-#   type    = "A"
-#   name    = var.web_server_dns_name
+resource "aws_route53_record" "record_A" {
+  zone_id = data.aws_route53_zone.hosted_zone.zone_id
+  type    = "A"
+  name    = var.web_server_dns_name
 
-#   alias {
-#     name                   = aws_lb.web_server_alb.dns_name
-#     zone_id                = aws_lb.web_server_alb.zone_id
-#     evaluate_target_health = true
-#   }
-# }
+  alias {
+    name                   = aws_lb.web_server_alb.dns_name
+    zone_id                = aws_lb.web_server_alb.zone_id
+    evaluate_target_health = true
+  }
+}
 
 resource "aws_acm_certificate" "cert" {
   domain_name       = var.web_server_dns_name

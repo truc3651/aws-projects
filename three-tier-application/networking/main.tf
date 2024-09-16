@@ -63,6 +63,14 @@ resource "aws_vpc_security_group_ingress_rule" "alb_sg_allows_internet_access" {
   cidr_ipv4 = "0.0.0.0/0"
 }
 
+resource "aws_vpc_security_group_ingress_rule" "alb_sg_allows_ssl_internet_access" {
+  security_group_id = aws_security_group.alb_sg.id
+  from_port   = 443
+  to_port     = 443
+  ip_protocol     = "tcp"
+  cidr_ipv4 = "0.0.0.0/0"
+}
+
 resource "aws_vpc_security_group_egress_rule" "alb_sg_allows_everywhere" {
   security_group_id = aws_security_group.alb_sg.id
   ip_protocol     = "-1"

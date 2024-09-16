@@ -38,6 +38,13 @@
  - 5 mins later, check CloudWatch alarm, and action it takes
  - Watch Auto Scaling activity / monitor screen
 
+## Set up environement for assignment
+ - Bought a domain name
+ - Create Route53 hosted zone for that domain
+ - Delegate domain name to new Amazon name servers
+ - Adjust environment variable domain name (dev.tfvars)
+ - Please check out youtube playlist saa
+
 ## Assignment
  - Inspired from https://docs.aws.amazon.com/autoscaling/ec2/userguide/tutorial-ec2-auto-scaling-load-balancer.html
  - Build a three tier application
