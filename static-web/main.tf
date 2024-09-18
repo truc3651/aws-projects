@@ -1,3 +1,25 @@
+terraform {
+  backend "s3" {
+    bucket         = "nguyentruc1811-s3-backend"
+    key            = "static-web.tfstate"
+    region         = "ap-southeast-1"
+    encrypt        = true
+    role_arn       = "arn:aws:iam::920372990740:role/S3BackendRole"
+    dynamodb_table = "s3-backend"
+  }
+  // terraform will generate a digest field (hash)
+  // to do optimistic locking
+  // if the state file is changed, terraform will not apply the change
+  // instead, it will show a diff and ask for confirmation
+
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
 provider "aws" {
   profile = var.profile
   region = var.region
@@ -49,7 +71,7 @@ locals {
 
 resource "aws_cloudfront_distribution" "distribution" {
     origin {
-        domain_name = aws_s3_bucket.bucket.bucket_domain_name
+        domain_name = aws_s3_bucket.bucket.bucket_regional_domain_name
         origin_access_control_id = aws_cloudfront_origin_access_control.origin_s3.id
         origin_id = local.s3_origin_id
     }
@@ -90,7 +112,7 @@ resource "aws_cloudfront_distribution" "distribution" {
 }
 
 resource "aws_cloudfront_origin_access_control" "origin_s3" {
-  name                              = var.origin_s3_id
+  name                              = local.s3_origin_id
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
@@ -104,9 +126,8 @@ output "cloudfront" {
 
 // upload file to bucket
 resource "aws_s3_object" "object" {
-  bucket = data.aws_s3_bucket.bucket.id
-  for_each = fileset(path.module, "files/*")
-  key    = replace(each.value, "files", "")
-  source = each.value
-  etag = filemd5("${each.value}")
+  bucket = aws_s3_bucket.bucket.id
+  key    = "index.html"
+  source = "./files/index.html" 
+  content_type = "text/html"
 }
