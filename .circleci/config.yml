@@ -9,7 +9,7 @@ parameters:
     default: false
   run-static-web:
     type: boolean
-    default: false
+    default: true
   run-vpc-ec2:
     type: boolean
     default: false
