@@ -113,7 +113,7 @@ workflows:
 
   ec2:
     when: 
-      and:
+      or:
         - << pipeline.parameters.run-ec2 >>
         - << pipeline.parameters.destroy-ec2 >>
     jobs:
@@ -145,7 +145,7 @@ workflows:
 
   s3-backend:
     when:
-      and:
+      or:
         - << pipeline.parameters.run-s3-backend >>
         - << pipeline.parameters.destroy-s3-backend >>
     jobs:
@@ -176,7 +176,7 @@ workflows:
 
   static-web:
     when:
-      and:
+      or:
         - << pipeline.parameters.run-static-web >>
         - << pipeline.parameters.destroy-static-web >>
     jobs:
@@ -207,7 +207,7 @@ workflows:
 
   vpc-ec2:
     when:
-      and:
+      or:
         - << pipeline.parameters.run-vpc-ec2 >>
         - << pipeline.parameters.destroy-vpc-ec2 >>
     jobs:
@@ -238,7 +238,7 @@ workflows:
 
   three-tier-application:
     when:
-      and:
+      or:
         - << pipeline.parameters.run-three-tier-application >>
         - << pipeline.parameters.destroy-three-tier-application >>
     jobs:
