@@ -42,6 +42,10 @@ jobs:
           name: terraform plan
           command: terraform plan -out plan.out
           working_directory: <<parameters.module>>/
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
 
   terraform_apply:
     docker:
@@ -50,16 +54,22 @@ jobs:
       module:
         type: string
     steps:
+      - attach_workspace:
+          at: .
       - run:
           name: terraform apply
           command: terraform apply -auto-approve "plan.out"
           working_directory: <<parameters.module>>/
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
 
 workflows:
   version: 2
-  # print_hello:
-  #   jobs:
-  #     - print_hello
+  print_hello:
+    jobs:
+      - print_hello
 
   ec2:
     when: << pipeline.parameters.run-ec2 >>
