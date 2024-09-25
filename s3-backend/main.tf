@@ -1,6 +1,5 @@
 provider "aws" {
   region = var.region
-  profile = var.profile
 }
 
 // centralize resources, for easy managerment
