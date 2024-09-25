@@ -6,7 +6,7 @@ parameters:
     default: false
   run-s3-backend:
     type: boolean
-    default: true
+    default: false
   run-static-web:
     type: boolean
     default: false
@@ -14,6 +14,22 @@ parameters:
     type: boolean
     default: false
   run-three-tier-application:
+    type: boolean
+    default: false
+  # destroy
+  destroy-ec2:
+    type: boolean
+    default: false
+  destroy-s3-backend:
+    type: boolean
+    default: true
+  destroy-static-web:
+    type: boolean
+    default: false
+  destroy-vpc-ec2:
+    type: boolean
+    default: false
+  destroy-three-tier-application:
     type: boolean
     default: false
 
@@ -65,6 +81,30 @@ jobs:
           paths:
             - .
 
+  terraform_plan_destroy:
+    docker:
+      - image: hashicorp/terraform:latest
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: terraform plan destroy
+          command: terraform plan -destroy -out destroyPlan
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  terraform_destroy:
+    docker:
+      - image: hashicorp/terraform:latest
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: terraform destroy
+          command: terraform apply -auto-approve destroyPlan
+
 workflows:
   version: 2
   print_hello:
@@ -72,75 +112,135 @@ workflows:
       - print_hello
 
   ec2:
-    when: << pipeline.parameters.run-ec2 >>
+    when: 
+      and:
+        - << pipeline.parameters.run-ec2 >>
+        - << pipeline.parameters.destroy-ec2 >>
     jobs:
       - terraform_plan:
+          when: << pipeline.parameters.run-ec2 >>
           name: terraform_plan_ec2
           context: aws-credentials
           module: ec2
       - terraform_apply:
+          when: << pipeline.parameters.run-ec2 >>
           name: terraform_apply_ec2
           context: aws-credentials
           module: ec2
           requires:
             - terraform_plan_ec2
-          filters:
-            branches:
-              only:
-                - main
+      - terraform_plan_destroy:
+          when: << pipeline.parameters.destroy-ec2 >>
+          name: terraform_plan_destroy_ec2
+          context: aws-credentials
+          module: ec2
+      - terraform_destroy:
+          when: << pipeline.parameters.destroy-ec2 >>
+          name: terraform_destroy_ec2
+          context: aws-credentials
+          module: ec2
+          requires:
+            - terraform_plan_destroy_ec2
+      
+
   s3-backend:
-    when: << pipeline.parameters.run-s3-backend >>
+    when:
+      and:
+        - << pipeline.parameters.run-s3-backend >>
+        - << pipeline.parameters.destroy-s3-backend >>
     jobs:
       - terraform_plan:
+          when: << pipeline.parameters.run-s3-backend >>
           name: terraform_plan_s3_backend
           context: aws-credentials
           module: s3-backend
       - terraform_apply:
+          when: << pipeline.parameters.run-s3-backend >>
           name: terraform_apply_s3_backend
           context: aws-credentials
           module: s3-backend
           requires:
             - terraform_plan_s3_backend
-          filters:
-            branches:
-              only:
-                - main
+      - terraform_plan_destroy:
+          when: << pipeline.parameters.destroy-s3-backend >>
+          name: terraform_plan_destroy_s3_backend
+          context: aws-credentials
+          module: s3-backend
+      - terraform_destroy:
+          when: << pipeline.parameters.destroy-s3-backend >>
+          name: terraform_destroy_s3_backend
+          context: aws-credentials
+          module: s3-backend
+          requires:
+            - terraform_plan_destroy_s3_backend
+
   static-web:
-    when: << pipeline.parameters.run-static-web >>
+    when:
+      and:
+        - << pipeline.parameters.run-static-web >>
+        - << pipeline.parameters.destroy-static-web >>
     jobs:
       - terraform_plan:
+          when: << pipeline.parameters.run-static-web >>
           name: terraform_plan_static_web
           context: aws-credentials
           module: static-web
       - terraform_apply:
+          when: << pipeline.parameters.run-static-web >>
           name: terraform_apply_static_web
           context: aws-credentials
           module: static-web
           requires:
             - terraform_plan_static_web
-          filters:
-            branches:
-              only:
-                - main
+      - terraform_plan_destroy:
+          when: << pipeline.parameters.destroy-static-web >>
+          name: terraform_plan_destroy_static_web
+          context: aws-credentials
+          module: static-web
+      - terraform_destroy:
+          when: << pipeline.parameters.destroy-static-web >>
+          name: terraform_destroy_static_web
+          context: aws-credentials
+          module: static-web
+          requires:
+            - terraform_plan_destroy_static_web
+
   vpc-ec2:
-    when: << pipeline.parameters.run-vpc-ec2 >>
+    when:
+      and:
+        - << pipeline.parameters.run-vpc-ec2 >>
+        - << pipeline.parameters.destroy-vpc-ec2 >>
     jobs:
       - terraform_plan:
+          when: << pipeline.parameters.run-vpc-ec2 >>
           name: terraform_plan_vpc_ec2
           context: aws-credentials
           module: vpc-ec2
       - terraform_apply:
+          when: << pipeline.parameters.run-vpc-ec2 >>
           name: terraform_apply_vpc_ec2
           context: aws-credentials
           module: vpc-ec2
           requires:
             - terraform_plan_vpc_ec2
-          filters:
-            branches:
-              only:
-                - main
+      - terraform_plan_destroy:
+          when: << pipeline.parameters.destroy-vpc-ec2 >>
+          name: terraform_plan_destroy_vpc_ec2
+          context: aws-credentials
+          module: vpc-ec2
+      - terraform_destroy:
+          when: << pipeline.parameters.destroy-vpc-ec2 >>
+          name: terraform_destroy_vpc_ec2
+          context: aws-credentials
+          module: vpc-ec2
+          requires:
+            - terraform_plan_destroy_vpc_ec2
+
   three-tier-application:
-    when: << pipeline.parameters.run-three-tier-application >>
+    when:
+      and:
+        - << pipeline.parameters.run-three-tier-application >>
+        - << pipeline.parameters.destroy-three-tier-application >>
     jobs:
       - terraform_plan:
           name: terraform_plan_three_tier_application
@@ -152,7 +252,15 @@ workflows:
           module: three-tier-application
           requires:
             - terraform_plan_three_tier_application
-          filters:
-            branches:
-              only:
-                - main
+      - terraform_plan_destroy:
+          when: << pipeline.parameters.destroy-three-tier-application >>
+          name: terraform_plan_destroy_three_tier_application
+          context: aws-credentials
+          module: three-tier-application
+      - terraform_destroy:
+          when: << pipeline.parameters.destroy-three-tier-application >>
+          name: terraform_destroy_three_tier_application
+          context: aws-credentials
+          module: three-tier-application
+          requires:
+            - terraform_plan_destroy_three_tier_application
