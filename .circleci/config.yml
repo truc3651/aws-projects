@@ -143,35 +143,18 @@ workflows:
             - terraform_plan_destroy_ec2
       
   s3-backend:
-    when:
-      or:
-        - << pipeline.parameters.run-s3-backend >>
-        - << pipeline.parameters.destroy-s3-backend >>
+    when: << pipeline.parameters.run-s3-backend >>
     jobs:
       - terraform_plan:
-          when: << pipeline.parameters.run-s3-backend >>
           name: terraform_plan_s3_backend
           context: aws-credentials
           module: s3-backend
       - terraform_apply:
-          when: << pipeline.parameters.run-s3-backend >>
           name: terraform_apply_s3_backend
           context: aws-credentials
           module: s3-backend
           requires:
             - terraform_plan_s3_backend
-      - terraform_plan_destroy:
-          when: << pipeline.parameters.destroy-s3-backend >>
-          name: terraform_plan_destroy_s3_backend
-          context: aws-credentials
-          module: s3-backend
-      - terraform_destroy:
-          when: << pipeline.parameters.destroy-s3-backend >>
-          name: terraform_destroy_s3_backend
-          context: aws-credentials
-          module: s3-backend
-          requires:
-            - terraform_plan_destroy_s3_backend
 
   destroy-s3-backend:
     when: << pipeline.parameters.destroy-s3-backend >>
