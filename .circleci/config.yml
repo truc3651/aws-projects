@@ -6,7 +6,7 @@ parameters:
     default: false
   run-s3-backend:
     type: boolean
-    default: true
+    default: false
   run-static-web:
     type: boolean
     default: false
@@ -18,6 +18,14 @@ parameters:
     default: false
 
 jobs:
+  print_hello:  
+    docker:
+      - image: circleci/python:3.8 
+    steps:
+      - run:
+          name: Print Hello World
+          command: echo "Hello World"
+
   terraform_plan:
     docker:
       - image: hashicorp/terraform:latest
@@ -49,6 +57,10 @@ jobs:
 
 workflows:
   version: 2
+  print_hello:
+    jobs:
+      - print_hello
+
   ec2:
     when: << pipeline.parameters.run-ec2 >>
     jobs:
