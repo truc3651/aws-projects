@@ -90,6 +90,7 @@ jobs:
       - run:
           name: terraform plan destroy
           command: terraform plan -destroy -out destroyPlan
+          working_directory: <<parameters.module>>/
       - persist_to_workspace:
           root: .
           paths:
@@ -104,6 +105,7 @@ jobs:
       - run:
           name: terraform destroy
           command: terraform apply -auto-approve destroyPlan
+          working_directory: <<parameters.module>>/
 
 workflows:
   version: 2.1
