@@ -39,7 +39,7 @@ jobs:
           command: terraform init
           working_directory: <<parameters.module>>/
       - run:
-          name: terraform plan -var-file="environment/dev.tfvars"
+          name: terraform plan
           command: terraform plan -out plan.out
           working_directory: <<parameters.module>>/
 
