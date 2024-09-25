@@ -6,7 +6,7 @@ parameters:
     default: false
   run-s3-backend:
     type: boolean
-    default: false
+    default: true
   run-static-web:
     type: boolean
     default: false
@@ -25,11 +25,15 @@ jobs:
       module:
         type: string
     steps:
+      - checkout
       - run:
-          name: Terraform Plan
-          command: |
-            terraform init
-            terraform plan -out plan.out -target=${{ parameters.module }}
+          name: terraform init
+          command: terraform init
+          working_directory: <<parameters.module>>/
+      - run:
+          name: terraform plan
+          command: terraform plan -out plan.out
+          working_directory: <<parameters.module>>/
 
   terraform_apply:
     docker:
@@ -39,9 +43,9 @@ jobs:
         type: string
     steps:
       - run:
-          name: Terraform Apply
-          command: |
-            terraform apply -target=${{ parameters.module }} -auto-approve "plan.out"
+          name: terraform apply
+          command: terraform apply -auto-approve "plan.out"
+          working_directory: <<parameters.module>>/
 
 workflows:
   version: 2
