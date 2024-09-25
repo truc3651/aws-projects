@@ -22,7 +22,7 @@ parameters:
     default: false
   destroy-s3-backend:
     type: boolean
-    default: true
+    default: false
   destroy-static-web:
     type: boolean
     default: false
