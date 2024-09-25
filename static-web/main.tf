@@ -11,13 +11,6 @@ terraform {
   // to do optimistic locking
   // if the state file is changed, terraform will not apply the change
   // instead, it will show a diff and ask for confirmation
-
-  required_providers {
-    aws = {
-      source = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
 }
 
 provider "aws" {

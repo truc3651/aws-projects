@@ -1,0 +1,132 @@
+version: 2.1
+
+parameters:
+  run-ec2:
+    type: boolean
+    default: false
+  run-s3-backend:
+    type: boolean
+    default: false
+  run-static-web:
+    type: boolean
+    default: false
+  run-vpc-ec2:
+    type: boolean
+    default: false
+  run-three-tier-application:
+    type: boolean
+    default: false
+
+jobs:
+  terraform_plan:
+    docker:
+      - image: hashicorp/terraform:latest
+    parameters:
+      module:
+        type: string
+    steps:
+      - run:
+          name: Terraform Plan
+          command: |
+            terraform init
+            terraform plan -out plan.out -target=${{ parameters.module }}
+
+  terraform_apply:
+    docker:
+      - image: hashicorp/terraform:latest
+    parameters:
+      module:
+        type: string
+    steps:
+      - run:
+          name: Terraform Apply
+          command: |
+            terraform apply -target=${{ parameters.module }} -auto-approve "plan.out"
+
+workflows:
+  version: 2
+  ec2:
+    when: << pipeline.parameters.run-ec2 >>
+    jobs:
+      - terraform_plan:
+          name: terraform_plan_ec2
+          context: admin-aws
+          module: ec2
+      - terraform_apply:
+          name: terraform_apply_ec2
+          context: admin-aws
+          module: ec2
+          requires:
+            - terraform_plan_ec2
+          filters:
+            branches:
+              only:
+                - main
+  s3-backend:
+    when: << pipeline.parameters.run-s3-backend >>
+    jobs:
+      - terraform_plan:
+          name: terraform_plan_s3_backend
+          context: admin-aws
+          module: s3-backend
+      - terraform_apply:
+          name: terraform_apply_s3_backend
+          context: admin-aws
+          module: s3-backend
+          requires:
+            - terraform_plan_s3_backend
+          filters:
+            branches:
+              only:
+                - main
+  static-web:
+    when: << pipeline.parameters.run-static-web >>
+    jobs:
+      - terraform_plan:
+          name: terraform_plan_static_web
+          context: admin-aws
+          module: static-web
+      - terraform_apply:
+          name: terraform_apply_static_web
+          context: admin-aws
+          module: static-web
+          requires:
+            - terraform_plan_static_web
+          filters:
+            branches:
+              only:
+                - main
+  vpc-ec2:
+    when: << pipeline.parameters.run-vpc-ec2 >>
+    jobs:
+      - terraform_plan:
+          name: terraform_plan_vpc_ec2
+          context: admin-aws
+          module: vpc-ec2
+      - terraform_apply:
+          name: terraform_apply_vpc_ec2
+          context: admin-aws
+          module: vpc-ec2
+          requires:
+            - terraform_plan_vpc_ec2
+          filters:
+            branches:
+              only:
+                - main
+  three-tier-application:
+    when: << pipeline.parameters.run-three-tier-application >>
+    jobs:
+      - terraform_plan:
+          name: terraform_plan_three_tier_application
+          context: admin-aws
+          module: three-tier-application
+      - terraform_apply:
+          name: terraform_apply_three_tier_application
+          context: admin-aws
+          module: three-tier-application
+          requires:
+            - terraform_plan_three_tier_application
+          filters:
+            branches:
+              only:
+                - main
