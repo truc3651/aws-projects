@@ -106,7 +106,7 @@ jobs:
           command: terraform apply -auto-approve destroyPlan
 
 workflows:
-  version: 2
+  version: 2.1
   print_hello:
     jobs:
       - print_hello
@@ -142,7 +142,6 @@ workflows:
           requires:
             - terraform_plan_destroy_ec2
       
-
   s3-backend:
     when:
       or:
