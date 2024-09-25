@@ -3,11 +3,6 @@ variable "region" {
   default = "ap-southeast-1"
 }
 
-variable "profile" {
-  type = string
-  default = "aws-projects-admin"
-}
-
 variable "project" {
   type        = string
   default     = "s3-backend"
