@@ -6,10 +6,10 @@ parameters:
     default: false
   run-s3-backend:
     type: boolean
-    default: false
+    default: true
   run-static-web:
     type: boolean
-    default: true
+    default: false
   run-vpc-ec2:
     type: boolean
     default: false
@@ -39,7 +39,7 @@ jobs:
           command: terraform init
           working_directory: <<parameters.module>>/
       - run:
-          name: terraform plan
+          name: terraform plan -var-file="environment/dev.tfvars"
           command: terraform plan -out plan.out
           working_directory: <<parameters.module>>/
 
