@@ -173,6 +173,20 @@ workflows:
           requires:
             - terraform_plan_destroy_s3_backend
 
+  destroy-s3-backend:
+    when: << pipeline.parameters.destroy-s3-backend >>
+    jobs:
+      - terraform_plan_destroy:
+          name: terraform_plan_s3_backend
+          context: aws-credentials
+          module: s3-backend
+      - terraform_destroy:
+          name: terraform_destroy_s3_backend
+          context: aws-credentials
+          module: s3-backend
+          requires:
+            - terraform_plan_s3_backend
+
   static-web:
     when:
       or:
