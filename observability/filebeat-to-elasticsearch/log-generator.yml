@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: log-generator
+  template:
+    metadata:
+      labels:
+        app: log-generator
+        environment: dev
+        version: 1.0.0
+    spec:
+      containers:
+      - name: log-generator
+        image: busybox
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - >
+          while true; do
+            echo "{\"message\":\"Test log entry\", \"detail\":"{\"application\": \"backend-survey\",\"port\": \"8080\", \"environment\": \"dev\"}"}";
+            sleep 5;
+          done

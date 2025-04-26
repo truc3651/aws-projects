@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{.Values.name}}-deployment-{{.Values.color}}
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{.Values.name}}
+  template:
+    metadata:
+      name: {{.Values.name}}-deployment
+      labels:
+        app: {{.Values.name}}
+        color: {{.Values.color}}
+    spec:
+      containers:
+      - name: {{.Values.name}}
+        image: {{.Values.image}}
+        ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP
+
+    

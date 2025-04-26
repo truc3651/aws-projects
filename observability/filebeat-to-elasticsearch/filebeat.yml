@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebeat-custom-config
+data:
+  filebeat.yml: |
+    logging.level: debug
+    
+    filebeat.inputs:
+    - type: container
+      stream: all
+      paths:
+        - /var/log/containers/*.log
+      processors:
+        - add_kubernetes_metadata:
+            host: ${NODE_NAME}
+            matchers:
+            - logs_path:
+                logs_path: "/var/log/containers/"
+            default_indexers.enabled: true
+            default_matchers.enabled: true
+            add_labels: true
+            include_labels: ["app", "version", "environment"]
+    
+    # Define Logstash output
+    output.logstash:
+      hosts: ["quickstart-ls-beats:5044"]
+    # output.elasticsearch:
+    #   hosts: ["https://quickstart-es-http:9200"]
+    #   username: "elastic"
+    #   password: "03TV0xC558J7xTMP56eP5zcC" 
+    #   ssl:
+    #     enabled: true
+    #     ca_trusted_fingerprint: "b9a10bbe64ee9826abeda6546fc988c8bf798b41957c33d05db736716513dc9c"
+
+---
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: quickstart
+spec:
+  type: filebeat
+  version: 8.17.3
+  config:
+    filebeat.config.modules.path: /usr/share/filebeat/modules.d/*.yml
+  daemonSet:
+    podTemplate:
+      spec:
+        containers:
+        - name: filebeat
+          command:
+          - filebeat
+          - -e
+          - -c
+          - /etc/filebeat/filebeat.yml
+          volumeMounts:
+          - name: varlogcontainers
+            mountPath: /var/log/containers
+          - name: varlogpods
+            mountPath: /var/log/pods
+          - name: custom-config
+            mountPath: /etc/filebeat
+          securityContext:
+            runAsUser: 0  # Run as root user
+          env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+        volumes:
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods # care about application
+        - name: varlogcontainers
+          hostPath:
+            path: /var/log/containers # use this volume as a standard in kubernetes. It provides to access logs as symlinks
+        - name: custom-config
+          configMap:
+            name: filebeat-custom-config

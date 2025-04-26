@@ -1,0 +1,101 @@
+apiVersion: logstash.k8s.elastic.co/v1alpha1
+kind: Logstash
+metadata:
+  name: quickstart
+spec:
+  version: 8.17.3
+  count: 1
+  elasticsearchRefs:
+    - name: quickstart
+      clusterName: qs
+  secureSettings:
+    - secretName: logstash-elasticsearch-credentials
+  podTemplate:
+    spec:
+      containers:
+        - name: logstash
+          env:
+            - name: ES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-elasticsearch-credentials
+                  key: username
+            - name: ES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-elasticsearch-credentials
+                  key: password
+            - name: QS_ES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-elasticsearch-credentials
+                  key: username
+            - name: QS_ES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-elasticsearch-credentials
+                  key: password
+  pipelines:
+    # The env variables (QS_ES_HOSTS, QS_ES_USER) are auto injected by elasticsearchRefs
+    - pipeline.id: main
+      config.string: |
+        input {
+          beats {
+            port => 5044
+          }
+        }
+
+        filter {
+          # parsing json for easy readable format
+          json {
+            source => "message"
+            target => "parsed_log"
+            skip_on_invalid_json => true
+          }
+          if [parsed_log] {
+            mutate {
+              replace => { "message" => "%{[parsed_log]}" }
+              remove_field => [ "parsed_log" ]
+            }
+          }
+
+          # Organize Kubernetes metadata into a standardized structure
+          if [kubernetes] {
+            mutate {
+              # Create application-specific fields for easier searching
+              add_field => {
+                "application" => "%{[kubernetes][labels][app]}"
+                "environment" => "%{[kubernetes][labels][environment]}"
+                "service" => "%{[kubernetes][labels][service]}"
+                "k8s_node" => "%{[kubernetes][node][name]}"
+                "k8s_namespace" => "%{[kubernetes][namespace]}"
+                "k8s_pod" => "%{[kubernetes][pod][name]}"
+                "k8s_container" => "%{[kubernetes][container][name]}"
+              }
+            }
+          }
+        }
+
+        output {
+          stdout { codec => rubydebug }
+
+          elasticsearch {
+            hosts => [ "${QS_ES_HOSTS}" ]
+            user => "${QS_ES_USER}"
+            password => "${QS_ES_PASSWORD}"
+            ssl_certificate_authorities => "${QS_ES_SSL_CERTIFICATE_AUTHORITY}"
+            index => "filebeat-%{+YYYY.MM.dd}"
+          }
+        }
+
+  # This is logstash service, filebeat needs to send logs to this service
+  services:
+    - name: beats
+      service:
+        spec:
+          type: NodePort
+          ports:
+            - port: 5044
+              name: "filebeat"
+              protocol: TCP
+              targetPort: 5044

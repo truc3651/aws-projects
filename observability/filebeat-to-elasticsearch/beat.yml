@@ -1,0 +1,102 @@
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: quickstart
+spec:
+  type: filebeat
+  version: 8.17.3
+  elasticsearchRef:
+    name: quickstart
+  config:
+    filebeat.inputs:
+      - type: container
+        paths:
+          - /var/log/containers/*.log
+        exclude_files: [
+            'quickstart-beat-filebeat-.*\.log', # Filebeat's own logs
+            'quickstart-es-default-.*\.log', # Filebeat's own logs
+            '.*_kube-system_.*\.log', # kube-system namespace logs
+            '.*_kube-public_.*\.log', # kube-public namespace logs
+            '.*_kube-node-lease_.*\.log', # kube-node-lease namespace logs
+            '.*_kubernetes-dashboard_.*\.log', # dashboard namespace logs (if you have it)
+            '.*_elastic-system_.*\.log', # elastic-system namespace logs
+          ]
+        json.keys_under_root: true
+
+    processors:
+      - add_kubernetes_metadata:
+          labels.dedot: true # kubernetes.container.name -> kubernetes.container_name
+          indexers:
+            - container: {}
+          matchers:
+            - logs_path:
+                logs_path: "/var/log/containers/"
+      - decode_json_fields:
+          fields: ["detail"]
+
+    output.elasticsearch:
+      hosts: ["https://quickstart-es-http:9200"]
+      username: ${ELASTICSEARCH_USERNAME}
+      password: ${ELASTICSEARCH_PASSWORD}
+
+    logging.level: debug
+    logging.selectors: ["kubernetes", "processors"]
+
+  daemonSet:
+    podTemplate:
+      spec:
+        serviceAccountName: filebeat-account
+        dnsPolicy: ClusterFirstWithHostNet
+        hostNetwork: true
+        securityContext:
+          runAsUser: 0
+        containers:
+          - name: filebeat
+            env:
+              - name: KUBERNETES_MASTER
+                value: "https://kubernetes.default.svc"
+              - name: NODE_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: spec.nodeName
+              - name: ELASTICSEARCH_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: filebeat-es-credentials
+                    key: username
+              - name: ELASTICSEARCH_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: filebeat-es-credentials
+                    key: password
+            volumeMounts:
+              - name: varlogcontainers
+                mountPath: /var/log/containers
+              - name: varlogpods
+                mountPath: /var/log/pods
+              - name: serviceaccount
+                mountPath: "/var/run/secrets/kubernetes.io/serviceaccount"
+                readOnly: true
+        volumes:
+          - name: varlogcontainers
+            hostPath:
+              path: /var/log/containers
+          - name: varlogpods
+            hostPath:
+              path: /var/log/pods
+          - name: serviceaccount
+            projected:
+              sources:
+                - serviceAccountToken:
+                    expirationSeconds: 3600
+                    path: token
+                - configMap:
+                    name: kube-root-ca.crt
+                    items:
+                      - key: ca.crt
+                        path: ca.crt
+                - downwardAPI:
+                    items:
+                      - path: namespace
+                        fieldRef:
+                          fieldPath: metadata.namespace

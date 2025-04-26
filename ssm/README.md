@@ -11,9 +11,9 @@
 3. Run tunnel script:
 
 ```bash
-  python3 -m venv venv
-  source venv/bin/activate
-  pip install boto3
-  chmod +x tunnel.py
-  AWS_PROFILE=personal python3 ./tunnel.py
+  python3 -m venv venv \
+  source venv/bin/activate \
+  pip install boto3 \
+  chmod +x tunnel.py \
+  AWS_PROFILE=personal python3 ./tunnel.py \
 ```
