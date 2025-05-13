@@ -1,3 +1,5 @@
+Certificates based authentication:
+
 Kubernetes doesn't have a concept of users or groups. Identities in Kubernetes could be a user ID, user email, group ID. To identify user or group, Kubenertes uses cert, which was signed by the Kubernetes CA. When you create a cluster, you assign a CA cert. If you want to add Bob as admin, you create a cert with common name is Bob, then signed it with the CA cert.
 
 The CA cert placed in the /etc/kubernetes/pki folder by default.

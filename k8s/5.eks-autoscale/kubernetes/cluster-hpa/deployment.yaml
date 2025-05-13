@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cluster-autoscaler
+  namespace: kube-system
+  labels:
+    app: cluster-autoscaler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cluster-autoscaler
+  template:
+    metadata:
+      labels:
+        app: cluster-autoscaler
+      annotations:
+        # never evict this pod during node draining or resource rebalancing
+        # if the autoscaler pod were evicted, this creates a 'chickend and egg' problem
+        # the component responsible for managing cluster capacity needs to remain stable during capacity changes
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+    spec:
+      serviceAccountName: cluster-autoscaler
+      containers:
+        - image: bitnami/cluster-autoscaler:1.30.0
+          name: cluster-autoscaler
+          resources:
+            limits:
+              cpu: 100m
+              memory: 300Mi
+            requests:
+              cpu: 100m
+              memory: 300Mi
+          command:
+            - ./cluster-autoscaler
+            - --v=4 # Sets the verbosity level to 4 (higher means more detailed logs)
+            - --stderrthreshold=info # Logs at "info" level and above will go to stderr
+            - --cloud-provider=aws # Configures the autoscaler to work with AWS as the infrastructure provider
+            - --skip-nodes-with-local-storage=false # Allows scaling down nodes even if they have local storage being used
+            # choose node group with least waste resources
+            - --expander=least-waste
+            # how autoscaler discover node groups
+            - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/eks-cluster
+            # balance node group during scale
+            - --balance-similar-node-groups
+            - --skip-nodes-with-system-pods=false
+          env:
+            - name: AWS_REGION
+              value: "ap-southeast-1"
