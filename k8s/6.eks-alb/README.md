@@ -13,3 +13,8 @@ Client → ELB → Target Group → EKS Worker Node - EC2 instances (echoserver 
 - The target group forwards the request to the selected worker node
 - from the NodePort to the appropriate cluster IP and port for the targeted Kubernetes Service
 - Service to pod through endpoints
+
+## Delete everything
+
+helm uninstall aws-load-balancer-controller
+terraform destroy -auto-approve

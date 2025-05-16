@@ -1,0 +1,24 @@
+FROM node:18-alpine
+
+# Install additional dependencies if needed (e.g., for SSL)
+RUN apk add --no-cache openssl
+
+# Create app directory
+WORKDIR /app
+
+# Install app dependencies
+COPY package*.json ./
+RUN yarn
+
+# Bundle app source
+COPY . .
+
+# Create directory for webhook certificates
+RUN mkdir -p /etc/webhook/certs
+
+# The port is now dynamic based on environment variables
+# We'll expose both the default port and a common alternative
+EXPOSE 8443 80
+
+# Command to run the application
+CMD ["node", "index.js"]

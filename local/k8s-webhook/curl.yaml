@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl
+  namespace: webhook
+spec:
+  containers:
+    - name: curl
+      image: alpine/curl

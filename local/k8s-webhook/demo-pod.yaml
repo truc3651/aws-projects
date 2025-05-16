@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-pod
+  namespace: default
+  labels:
+    webhook-enabled: "true"
+spec:
+  containers:
+    - name: nginx
+      image: nginx

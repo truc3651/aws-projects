@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook
+  namespace: webhook
+spec:
+  selector:
+    app: webhook
+  ports:
+    - port: 443
+      targetPort: 8443
+      name: application
+    - port: 80
+      targetPort: 80
+      name: metrics
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook
+  namespace: webhook
+  labels:
+    app: webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webhook
+  template:
+    metadata:
+      namespace: webhook
+      labels:
+        app: webhook
+    spec:
+      nodeSelector:
+        kubernetes.io/os: linux
+      serviceAccountName: webhook
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1234
+      containers:
+        - name: server
+          image: webhook
+          imagePullPolicy: Never
+          env:
+            - name: ENABLE_TLS
+              value: "true"
+          ports:
+            - containerPort: 8443
+              name: tls
+            - containerPort: 80
+              name: metrics
+          volumeMounts:
+            - name: webhook-tls
+              mountPath: /etc/webhook/certs/
+              readOnly: true
+      volumes:
+        - name: webhook-tls
+          secret:
+            secretName: webhook-tls
